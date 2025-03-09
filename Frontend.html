@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Safety Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #6c6969;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: rgba(229, 5, 61, 0.576);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgb(56, 144, 170);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #c35624;
+            border-radius: 5px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #c2150f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #070000;
+            border-radius: 10px;
+            margin-top: 20px;
+            height: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #266736;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            line-height: 25px;
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Email Safety Checker</h1>
+        <p>Enter the content of the email below:</p>
+        <textarea id="emailContent" placeholder="Enter email content here..."></textarea><br><br>
+        <button class="button" onclick="checkEmail()">Check Email</button>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar">100%</div>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function checkEmail() {
+            const emailContent = document.getElementById("emailContent").value;
+
+            if (!emailContent.trim()) {
+                document.getElementById("result").textContent = "Please enter some email content.";
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/check_email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email_content: emailContent })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const safetyScore = data.safety_score;
+                    const resultMessage = data.result_message;
+
+                    // Update the result message
+                    document.getElementById("result").textContent = `Safety Score: ${safetyScore}% - ${resultMessage}`;
+
+                    // Update the progress bar
+                    const progressBar = document.getElementById("progressBar");
+                    progressBar.style.width = `${safetyScore}%`;
+
+                    // Change progress bar color based on score
+                    if (safetyScore > 80) {
+                        progressBar.style.backgroundColor = "#28a745"; // Green (Safe)
+                    } else if (safetyScore > 50) {
+                        progressBar.style.backgroundColor = "#ffc107"; // Yellow (Caution)
+                    } else if (safetyScore > 20) {
+                        progressBar.style.backgroundColor = "#fd7e14"; // Orange (Warning)
+                    } else {
+                        progressBar.style.backgroundColor = "#dc3545"; // Red (Danger)
+                    }
+
+                    progressBar.textContent = `${safetyScore}%`;
+                } else {
+                    throw new Error("Failed to get response from the server.");
+                }
+            } catch (error) {
+                document.getElementById("result").textContent = "Error: Unable to check email safety.";
+            }
+        }
+    </script>
+
+</body>
+
+</html>
